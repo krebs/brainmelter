@@ -1,0 +1,45 @@
+name: BrainMelter CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Check shell scripts with shellcheck
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh setup.sh
+      
+      - name: Check Liquidsoap scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y liquidsoap
+          liquidsoap --check config/brainmelter.liq
+  
+  test-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y liquidsoap ffmpeg netcat flite espeak bc
+      
+      - name: Run setup script
+        run: |
+          chmod +x setup.sh
+          ./setup.sh
+      
+      - name: Verify scripts are executable
+        run: |
+          test -x scripts/espeak-direct.sh
+          test -x scripts/irc-to-brainmelter.sh
+          test -x scripts/parallel-speech-irc.sh

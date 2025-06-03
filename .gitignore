@@ -1,0 +1,54 @@
+# BrainMelter .gitignore
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Log files
+*.log
+logs/
+liquidsoap.log
+irc.log
+
+# Audio files
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Generated output
+/output/
+
+# Environment
+.env
+.envrc
+.direnv/
+
+# Nix
+result
+result-*
+
+# Flite and espeak generated files
+*.wav
+*.txt.wav
+
+# Temporary directories created by scripts
+/tmp.*
+/speech_*
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux system files
+*~
+.directory
+.Trash-*
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
