@@ -19,7 +19,7 @@
           '';
 
           irc-input = pkgs.writeShellScriptBin "irc-input" ''
-            export PATH=${pkgs.lib.makeBinPath [ pkgs.ffmpeg pkgs.flite ]}
+            export PATH=$PATH:${pkgs.lib.makeBinPath [ pkgs.ffmpeg pkgs.flite ]}
             exec ${./irc-input.sh}
           '';
         };
