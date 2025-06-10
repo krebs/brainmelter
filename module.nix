@@ -39,19 +39,6 @@ in {
       };
     };
 
-    systemd.services.brainmelter-mixer = {
-      description = "BrainMelter Liquidsoap Script";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
-      environment = {
-        BRAINMELTER_HARBORS = toString config.services.brainmelter.numberOfHarbors;
-      };
-      serviceConfig = {
-        ExecStart = "${brainmelterPkgs.mixer}/bin/mixer";
-        Restart = "on-failure";
-        User = "brainmelter";
-        Group = "brainmelter";
-      };
-    };
+    services.liquidsoap.streams.brainmelter-mixer = ./mixer.liq;
   };
 }
