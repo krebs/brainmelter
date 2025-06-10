@@ -1,16 +1,5 @@
-#!/usr/bin/env bash
-# irc-to-brainmelter.sh - Connect to IRC and stream messages to brainmelter using Flite TTS
-# Usage: ./irc-to-brainmelter.sh [OPTIONS]
-# 
-# Requires flite text-to-speech engine to be installed.
-#
-# Examples:
-#   ./irc-to-brainmelter.sh                        # Connect to IRC with default settings
-#   ./irc-to-brainmelter.sh --test-file text.txt   # Test with a local text file instead of IRC
-
 set -e
 
-# Default settings
 SERVER="brockman.news"
 PORT=6667
 NICK="brainmelter"
@@ -114,7 +103,8 @@ random_voice() {
 }
 
 random_harbor() {
-    echo -e "main\nfx1\nfx2\nambient\ndrums" | shuf -n1
+    number_of_harbors="${BRAINMELTER_HARBORS:-6}"
+    seq "$number_of_harbors" | shuf -n 1
 }
 
 random_effect() {
@@ -128,19 +118,19 @@ stream_to_brainmelter() {
     local harbor=$(random_harbor)
     local effect=$(random_effect)
     local volume=$(awk -v min=0.6 -v max=1.0 'BEGIN{srand(); print min+rand()*(max-min)}')
-    
+
     echo "[$(date +%H:%M:%S)] Streaming to harbor $harbor: \"$text\"" | tee -a "$LOG_FILE"
-    
+
     # Create a temporary file for the speech
     local temp_wav="$TEMP_DIR/speech_$(date +%s%N).wav"
-    
+
     # Generate speech with flite
     flite -voice "$voice" -t "$text" -o "$temp_wav" || {
         echo "Error generating speech with flite. Voice: $voice" | tee -a "$LOG_FILE"
         # Fallback to default voice if specified voice fails
         flite -t "$text" -o "$temp_wav"
     }
-    
+
     # Choose effect filter
     local effect_filter=""
     case "$effect" in
@@ -157,7 +147,7 @@ stream_to_brainmelter() {
             effect_filter="-af afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75"
             ;;
     esac
-    
+
     # Stream to brainmelter
     ffmpeg -hide_banner -loglevel error \
         -f wav -i "$temp_wav" \
@@ -165,10 +155,10 @@ stream_to_brainmelter() {
         -af "volume=$volume" \
         -c:a libmp3lame -b:a 192k -content_type audio/mpeg \
         -f mp3 "icecast://source:hackme@localhost:8005/$harbor" &
-    
+
     local ffmpeg_pid=$!
     echo $ffmpeg_pid >> "$PIDS_FILE"
-    
+
     # Schedule removal of temporary file
     (
         sleep 10
@@ -182,12 +172,12 @@ if [[ "$TEST_MODE" == "true" ]]; then
     echo "Reading from file: $TEST_FILE"
     echo "Using Flite TTS with random voices for speech synthesis"
     echo "Delay between lines: $DELAY seconds"
-    
+
     if [[ ! -f "$TEST_FILE" ]]; then
         echo "Error: Test file not found: $TEST_FILE"
         exit 1
     fi
-    
+
     # Process each line of the test file
     while IFS= read -r line; do
         echo "Processing: $line"
@@ -196,7 +186,7 @@ if [[ "$TEST_MODE" == "true" ]]; then
             sleep "$DELAY"
         fi
     done < "$TEST_FILE"
-    
+
     echo "Test file processing complete."
 else
     echo "=== IRC to BrainMelter with Flite TTS ==="
@@ -211,7 +201,7 @@ else
         echo "USER $USER 0 * :$USER"
         sleep 3
         echo "JOIN $CHANNEL"
-        
+
         # Send periodic pings to keep the connection alive
         while true; do
             sleep 30
@@ -223,14 +213,14 @@ else
     # Read messages from IRC and process them
     nc "$SERVER" "$PORT" < "$FIFO" | while IFS= read -r line; do
         echo "$line" >> "$LOG_FILE"
-        
+
         # Extract message content using the pattern
         message=$(echo "$line" | sed -n "s/.*$PATTERN//p")
-        
+
         if [[ -n "$message" ]]; then
             stream_to_brainmelter "$message"
         fi
-        
+
         # Respond to server PINGs to avoid timeout
         if [[ "$line" == PING* ]]; then
             server_ping=$(echo "$line" | cut -d':' -f2)
