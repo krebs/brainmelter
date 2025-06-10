@@ -117,7 +117,6 @@ stream_to_brainmelter() {
     local voice=$(random_voice)
     local harbor=$(random_harbor)
     local effect=$(random_effect)
-    local volume=$(awk -v min=0.6 -v max=1.0 'BEGIN{srand(); print min+rand()*(max-min)}')
 
     echo "[$(date +%H:%M:%S)] Streaming to harbor $harbor: \"$text\"" | tee -a "$LOG_FILE"
 
@@ -152,7 +151,6 @@ stream_to_brainmelter() {
     ffmpeg -hide_banner -loglevel error \
         -f wav -i "$temp_wav" \
         $effect_filter \
-        -af "volume=$volume" \
         -c:a libmp3lame -b:a 192k -content_type audio/mpeg \
         -f mp3 "icecast://source:hackme@localhost:8005/$harbor" &
 
