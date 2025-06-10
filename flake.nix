@@ -24,7 +24,8 @@
           '';
         };
 
-        nixosModules.brainmelter = import ./module.nix { inherit self; };
       }
-    );
+    ) // {
+      nixosModules.brainmelter = import ./module.nix { inherit self; };
+    };
 }
