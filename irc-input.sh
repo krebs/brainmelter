@@ -95,10 +95,7 @@ trap cleanup EXIT INT TERM
 mkfifo "$FIFO"
 touch "$PIDS_FILE"
 
-# Function to get a random voice, harbor, and effect
 random_voice() {
-    # Available flite voices: awb (Scottish male), kal (American male),
-    # rms (American male), slt (American female), kal16 (American male 16kHz)
     echo -e "awb\nkal\nrms\nslt\nkal16" | shuf -n1
 }
 
@@ -107,16 +104,10 @@ random_harbor() {
     seq "$number_of_harbors" | shuf -n 1
 }
 
-random_effect() {
-    echo -e "none\necho\nreverb\npitch\nvocoder" | shuf -n1
-}
-
-# Function to stream text to brainmelter
 stream_to_brainmelter() {
     local text="$1"
     local voice=$(random_voice)
     local harbor=$(random_harbor)
-    local effect=$(random_effect)
 
     echo "[$(date +%H:%M:%S)] Streaming to harbor $harbor: \"$text\"" | tee -a "$LOG_FILE"
 
@@ -130,34 +121,14 @@ stream_to_brainmelter() {
         flite -t "$text" -o "$temp_wav"
     }
 
-    # Choose effect filter
-    local effect_filter=""
-    case "$effect" in
-        echo)
-            effect_filter="-af aecho=0.8:0.9:1000:0.3"
-            ;;
-        reverb)
-            effect_filter="-af areverse,aecho=0.8:0.88:60:0.4,areverse"
-            ;;
-        pitch)
-            effect_filter="-af asetrate=44100*0.9,aresample=44100"
-            ;;
-        vocoder)
-            effect_filter="-af afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75"
-            ;;
-    esac
-
-    # Stream to brainmelter
     ffmpeg -hide_banner -loglevel error \
         -f wav -i "$temp_wav" \
-        $effect_filter \
         -c:a libmp3lame -b:a 192k -content_type audio/mpeg \
         -f mp3 "icecast://source:hackme@localhost:8005/$harbor" &
 
     local ffmpeg_pid=$!
     echo $ffmpeg_pid >> "$PIDS_FILE"
 
-    # Schedule removal of temporary file
     (
         sleep 10
         rm -f "$temp_wav"
