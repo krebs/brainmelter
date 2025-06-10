@@ -56,6 +56,12 @@ in {
       '';
     };
 
+    services.nginx.virtualHosts.${config.services.brainmelter.hostname} = {
+      enableACME = true;
+      forceSSL = true;
+      locations."/".proxyPass = "http://127.0.0.1:${toString config.services.icecast.listen.port}";
+    };
+
     services.liquidsoap.streams.brainmelter-mixer = pkgs.writeText "mixer.liq" ''
       set("log.level", 3)
 
