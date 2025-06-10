@@ -17,6 +17,12 @@ in {
   };
 
   config = mkIf config.services.brainmelter.enable {
+    users.users.brainmelter = {
+      isSystemUser = true;
+      group = "brainmelter";
+    };
+    users.groups.brainmelter = {};
+
     systemd.services.brainmelter-brockman = {
       description = "BrainMelter Shell Script";
       after = [ "brainmelter-mixer.service" ];
@@ -28,6 +34,8 @@ in {
       serviceConfig = {
         ExecStart = "${brainmelterPkgs.irc-input}/bin/irc-input";
         Restart = "on-failure";
+        User = "brainmelter";
+        Group = "brainmelter";
       };
     };
 
@@ -41,6 +49,8 @@ in {
       serviceConfig = {
         ExecStart = "${brainmelterPkgs.mixer}/bin/mixer";
         Restart = "on-failure";
+        User = "brainmelter";
+        Group = "brainmelter";
       };
     };
   };
