@@ -9,6 +9,10 @@ let
 in {
   options.services.brainmelter = {
     enable = mkEnableOption "Enable BrainMelter services";
+    hostname = mkOption {
+      type = types.str;
+      description = "Where to host the icecast server";
+    };
     numberOfHarbors = mkOption {
       type = types.int;
       default = 6;
@@ -39,6 +43,34 @@ in {
       };
     };
 
-    services.liquidsoap.streams.brainmelter-mixer = ./mixer.liq;
+    services.icecast = {
+      enable = true;
+      hostname = config.services.brainmelter.hostname;
+      admin.password = "hackme";
+      listen.port = 6457;
+      extraConf = ''
+        <authentication>
+          <source-password>${icecastPassword}</source-password>
+        </authentication>
+      '';
+    };
+
+    services.liquidsoap.streams.brainmelter-mixer = pkgs.writeText "mixer.liq" ''
+      ${builtins.readText ./mixer.liq}
+
+      name = "brainmelter"
+      genre = "news"
+      description = "melts your brain"
+      audio = mixed
+
+      output.icecast(%vorbis, audio, mount = name ^ ".ogg", genre = genre, description = description,
+        port = ${toString config.services.icecast.listen.port},
+        password = "${icecastPassword}",
+      )
+      output.icecast(%opus, audio, mount = name ^ ".opus", genre = genre, description = description,
+        port = ${toString config.services.icecast.listen.port},
+        password = "${icecastPassword}",
+      )
+    '';
   };
 }
