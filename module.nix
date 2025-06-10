@@ -19,7 +19,8 @@ in {
   config = mkIf config.services.brainmelter.enable {
     systemd.services.brainmelter-brockman = {
       description = "BrainMelter Shell Script";
-      after = [ "network.target" ];
+      after = [ "brainmelter-mixer.service" ];
+      requires = [ "brainmelter-mixer.service" ];
       wantedBy = [ "multi-user.target" ];
       environment = {
         BRAINMELTER_HARBORS = toString config.services.brainmelter.numberOfHarbors;
