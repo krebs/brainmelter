@@ -99,15 +99,19 @@ random_voice() {
     echo -e "awb\nkal\nrms\nslt\nkal16" | shuf -n1
 }
 
-random_harbor() {
-    number_of_harbors="${BRAINMELTER_HARBORS:-6}"
-    seq "$number_of_harbors" | shuf -n 1
+HARBOR_COUNT="${BRAINMELTER_HARBORS:-6}"
+CURRENT_HARBOR=1
+
+next_harbor() {
+    local harbor=$CURRENT_HARBOR
+    CURRENT_HARBOR=$(( (CURRENT_HARBOR % HARBOR_COUNT) + 1 ))
+    echo "$harbor"
 }
 
 stream_to_brainmelter() {
     local text="$1"
     local voice=$(random_voice)
-    local harbor=$(random_harbor)
+    local harbor=$(next_harbor)
 
     echo "[$(date +%H:%M:%S)] Streaming to harbor $harbor: \"$text\"" | tee -a "$LOG_FILE"
 
